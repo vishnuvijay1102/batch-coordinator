@@ -1,0 +1,6 @@
+{
+  "name": "Batch Coordinator",
+  "description": "A comprehensive batch and classroom management system with local PostgreSQL integration via DuckDNS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
