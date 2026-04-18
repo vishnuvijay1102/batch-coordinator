@@ -87,9 +87,9 @@ export default function Batches() {
   };
 
   const filteredBatches = batches.filter(b => 
-    b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.trainer.toLowerCase().includes(searchQuery.toLowerCase())
+    (b?.title || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (b?.code || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (b?.trainer || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   return (

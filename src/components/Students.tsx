@@ -55,9 +55,9 @@ export default function Students() {
   };
 
   const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.phone.includes(searchQuery) ||
-    s.course.toLowerCase().includes(searchQuery.toLowerCase())
+    (s?.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (s?.phone || '').includes(searchQuery || '') ||
+    (s?.course || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   const formatCurrency = (amount: number) => {

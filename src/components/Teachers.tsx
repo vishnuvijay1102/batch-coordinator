@@ -43,8 +43,8 @@ export default function Teachers() {
   };
 
   const filteredTeachers = teachers.filter(t => 
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.handling.toLowerCase().includes(searchQuery.toLowerCase())
+    (t?.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (t?.handling || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   return (

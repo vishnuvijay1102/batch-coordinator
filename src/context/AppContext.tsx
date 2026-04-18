@@ -293,13 +293,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addCourse = async (name: string, code: string) => {
-    const res = await fetch('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, code })
-    });
-    const newCourse = await res.json();
-    setCourses([...courses, newCourse]);
+    try {
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, code })
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.details || 'Failed to add course');
+      }
+
+      const newCourse = await res.json();
+      setCourses([...courses, newCourse]);
+    } catch (err) {
+      console.error('Add Course failed:', err);
+      alert(`Error: ${err instanceof Error ? err.message : 'Could not add course'}`);
+    }
   };
 
   const deleteCourse = async (id: string) => {

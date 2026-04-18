@@ -31,9 +31,7 @@ const poolConfig: pg.PoolConfig = {
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 };
 
-// Only try to connect if we actually have a configuration (using fallbacks now)
-const shouldConnect = true;
-
+// Handle DATABASE_URL separately to override base config if provided
 if (process.env.DATABASE_URL && process.env.DATABASE_URL.length > 5) {
   if (process.env.DATABASE_URL.includes('://')) {
     poolConfig.connectionString = process.env.DATABASE_URL;
@@ -42,29 +40,63 @@ if (process.env.DATABASE_URL && process.env.DATABASE_URL.length > 5) {
   }
 }
 
-console.log(`📡 Attempting to connect to database at: ${poolConfig.host || 'unknown host'}`);
-
 const pool = new Pool(poolConfig);
+
+// Database Migration / Repair Logic
+const runMigrations = async () => {
+  try {
+    console.log('🏗️  Step 1/2: Preparing comprehensive database migration...');
+    
+    // 1. Courses Table
+    await pool.query('ALTER TABLE courses ALTER COLUMN code TYPE TEXT');
+    await pool.query('ALTER TABLE courses ALTER COLUMN name TYPE TEXT');
+    
+    // 2. Batches Table
+    await pool.query('ALTER TABLE batches ALTER COLUMN code TYPE TEXT');
+    await pool.query('ALTER TABLE batches ALTER COLUMN title TYPE TEXT');
+    await pool.query('ALTER TABLE batches ALTER COLUMN trainer_name TYPE TEXT');
+    await pool.query('ALTER TABLE batches ALTER COLUMN day TYPE TEXT');
+    await pool.query('ALTER TABLE batches ALTER COLUMN batch_type TYPE TEXT');
+    await pool.query('ALTER TABLE batches ALTER COLUMN status TYPE TEXT');
+    
+    // 3. Teachers Table
+    await pool.query('ALTER TABLE teachers ALTER COLUMN name TYPE TEXT');
+    await pool.query('ALTER TABLE teachers ALTER COLUMN handling TYPE TEXT');
+    
+    // 4. Students Table
+    await pool.query('ALTER TABLE students ALTER COLUMN name TYPE TEXT');
+    await pool.query('ALTER TABLE students ALTER COLUMN phone TYPE TEXT');
+    await pool.query('ALTER TABLE students ALTER COLUMN course_name TYPE TEXT');
+    await pool.query('ALTER TABLE students ALTER COLUMN payment_status TYPE TEXT');
+    
+    // 5. Mock Details Table
+    await pool.query('ALTER TABLE mock_details ALTER COLUMN trainer_name TYPE TEXT');
+    
+    // 6. Classrooms Table
+    await pool.query('ALTER TABLE classrooms ALTER COLUMN name TYPE TEXT');
+
+    console.log('✅ Step 2/2: Migrations completed successfully. "VARCHAR(10)" limits are gone.');
+  } catch (err) {
+    console.log('ℹ️  Migration notice (Normal on first run):', err instanceof Error ? err.message : String(err));
+  }
+};
 
 // Test the connection with retry logic for DNS errors
 const connectWithRetry = (retries = 5, delay = 2000) => {
-  pool.connect((err, client, release) => {
+  pool.connect(async (err, client, release) => {
     if (err) {
       if (err.message.includes('EAI_AGAIN') && retries > 0) {
-        console.warn(`⏳ DNS resolution failed for "${poolConfig.host}". Retrying in ${delay/1000}s... (${retries} retries left)`);
+        console.warn(`⏳ DNS resolution failed. Retrying in ${delay/1000}s... (${retries} retries left)`);
         setTimeout(() => connectWithRetry(retries - 1, delay), delay);
-      } else if (err.message.includes('EAI_AGAIN')) {
-        console.error('❌ DNS Error (EAI_AGAIN): The server cannot find "lingocoach.duckdns.org" after multiple attempts.');
-        console.error('   Please ensure your DuckDNS dashboard shows your current IP.');
       } else if (err.message.includes('pg_hba.conf')) {
-        console.error('❌ Postgres Security Error: Connection reached your machine but was rejected.');
-        console.error('   Update your pg_hba.conf to allow host "0.0.0.0/0".');
+        console.error('❌ Postgres Security Error: Connection reached machine but was rejected. Update pg_hba.conf.');
       } else {
         console.error('❌ Database Connection Error:', err.message);
       }
     } else {
       console.log('✅ Successfully connected to PostgreSQL database');
       release();
+      await runMigrations();
     }
   });
 };

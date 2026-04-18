@@ -53,8 +53,8 @@ export default function MockDetails() {
   const filteredMocks = mockDetails.filter(mock => {
     const roomName = classrooms.find(r => String(r.id) === String(mock.classroomId || ''))?.name || '';
     return (
-      roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (mock.trainer || '').toLowerCase().includes(searchQuery.toLowerCase())
+      (roomName || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+      (mock?.trainer || '').toLowerCase().includes((searchQuery || '').toLowerCase())
     );
   });
 
