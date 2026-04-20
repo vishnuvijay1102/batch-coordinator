@@ -120,32 +120,6 @@ export default function Dashboard() {
           })}
         </div>
       </section>
-
-      {/* Secondary Panel - Feature Highlight */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-12 border-t border-outline-variant/10">
-        <div className="bg-primary-container dark:bg-secondary rounded-xl p-10 text-white relative overflow-hidden transition-colors">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mr-32 -mt-32"></div>
-          <h4 className="text-label text-white/60 mb-6">System Intelligence</h4>
-          <h3 className="text-3xl font-bold tracking-tight mb-4 leading-tight">Automated Spatial<br/>Optimization Active</h3>
-          <p className="text-white/80 text-sm leading-relaxed max-w-md">
-            Our monolith architecture continuously monitors classroom load. If a room remains "Free" for more than 48 hours, the system suggests batch re-allocation for maximum campus efficiency.
-          </p>
-        </div>
-
-        <div className="relative group h-full min-h-[240px] rounded-xl overflow-hidden shadow-lg border border-outline-variant/10">
-          <img 
-            alt="Campus View" 
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-            referrerPolicy="no-referrer"
-            src="https://images.unsplash.com/photo-1541339907198-e08759dfc3ef?auto=format&fit=crop&q=80&w=1000" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
-          <div className="absolute bottom-0 left-0 p-8">
-            <span className="px-2 py-1 bg-secondary text-white text-[8px] font-bold uppercase tracking-widest mb-2 inline-block">Updates</span>
-            <h4 className="text-white font-bold text-2xl leading-tight">North Campus Expansion<br/>Nearing Completion</h4>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
