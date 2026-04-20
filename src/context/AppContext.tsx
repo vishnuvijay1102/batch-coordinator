@@ -18,6 +18,7 @@ export interface Course {
   id: string;
   name: string;
   code: string;
+  batchCodes: string[];
 }
 
 export interface Batch {
@@ -82,9 +83,9 @@ interface AppContextType {
   addStudent: (student: Omit<Student, 'id'>) => void;
   deleteStudent: (id: string) => void;
   updateStudent: (id: string, updates: Partial<Student>) => void;
-  addCourse: (name: string, code: string) => void;
+  addCourse: (name: string, code: string, batchCodes: string[]) => void;
   deleteCourse: (id: string) => void;
-  updateCourse: (id: string, name: string, code: string) => void;
+  updateCourse: (id: string, name: string, code: string, batchCodes: string[]) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   editBatchId: string | null;
@@ -93,6 +94,7 @@ interface AppContextType {
   addMockDetail: (mock: Omit<MockDetail, 'id'>) => void;
   deleteMockDetail: (id: string) => void;
   updateMockDetail: (id: string, updates: Partial<MockDetail>) => void;
+  fetchData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -115,31 +117,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [mockDetails, setMockDetails] = useState<MockDetail[]>([]);
 
+  const fetchData = async () => {
+    try {
+      const [u, cl, b, t, s, co, m] = await Promise.all([
+        fetch('/api/users').then(r => r.ok ? r.json() : []),
+        fetch('/api/classrooms').then(r => r.ok ? r.json() : []),
+        fetch('/api/batches').then(r => r.ok ? r.json() : []),
+        fetch('/api/teachers').then(r => r.ok ? r.json() : []),
+        fetch('/api/students').then(r => r.ok ? r.json() : []),
+        fetch('/api/courses').then(r => r.ok ? r.json() : []),
+        fetch('/api/mock-details').then(r => r.ok ? r.json() : [])
+      ]);
+      
+      setUsers(Array.isArray(u) ? u : []);
+      setClassrooms(Array.isArray(cl) ? cl : []);
+      setBatches(Array.isArray(b) ? b : []);
+      setTeachers(Array.isArray(t) ? t : []);
+      setStudents(Array.isArray(s) ? s : []);
+      setCourses(Array.isArray(co) ? co : []);
+      setMockDetails(Array.isArray(m) ? m : []);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+    }
+  };
+
   // Initial Data Fetch
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [u, cl, b, t, s, co, m] = await Promise.all([
-          fetch('/api/users').then(r => r.ok ? r.json() : []),
-          fetch('/api/classrooms').then(r => r.ok ? r.json() : []),
-          fetch('/api/batches').then(r => r.ok ? r.json() : []),
-          fetch('/api/teachers').then(r => r.ok ? r.json() : []),
-          fetch('/api/students').then(r => r.ok ? r.json() : []),
-          fetch('/api/courses').then(r => r.ok ? r.json() : []),
-          fetch('/api/mock-details').then(r => r.ok ? r.json() : [])
-        ]);
-        
-        setUsers(Array.isArray(u) ? u : []);
-        setClassrooms(Array.isArray(cl) ? cl : []);
-        setBatches(Array.isArray(b) ? b : []);
-        setTeachers(Array.isArray(t) ? t : []);
-        setStudents(Array.isArray(s) ? s : []);
-        setCourses(Array.isArray(co) ? co : []);
-        setMockDetails(Array.isArray(m) ? m : []);
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-      }
-    };
     fetchData();
   }, []);
 
@@ -218,13 +221,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addBatch = async (batch: Omit<Batch, 'id'>) => {
-    const res = await fetch('/api/batches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(batch)
-    });
-    const newBatch = await res.json();
-    setBatches([...batches, newBatch]);
+    try {
+      const res = await fetch('/api/batches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch)
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.details || 'Failed to add batch');
+      }
+
+      const newBatch = await res.json();
+      setBatches(prev => [...prev, newBatch]);
+    } catch (err) {
+      console.error('Add Batch failed:', err);
+      alert(`Error: ${err instanceof Error ? err.message : 'Could not add batch'}`);
+    }
   };
 
   const closeBatch = async (id: string) => {
@@ -268,13 +282,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addStudent = async (student: Omit<Student, 'id'>) => {
-    const res = await fetch('/api/students', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(student)
-    });
-    const newStudent = await res.json();
-    setStudents([...students, newStudent]);
+    try {
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(student)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.details || 'Failed to add student');
+      }
+
+      const newStudent = await res.json();
+      setStudents(prev => [...prev, newStudent]);
+    } catch (err) {
+      console.error('Add Student failed:', err);
+      alert(`Error: ${err instanceof Error ? err.message : 'Could not add student'}`);
+    }
   };
 
   const deleteStudent = async (id: string) => {
@@ -292,12 +317,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setStudents(students.map(s => s.id === id ? { ...s, ...updatedStudent } : s));
   };
 
-  const addCourse = async (name: string, code: string) => {
+  const addCourse = async (name: string, code: string, batchCodes: string[]) => {
     try {
       const res = await fetch('/api/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, code })
+        body: JSON.stringify({ name, code, batchCodes })
       });
       
       if (!res.ok) {
@@ -318,11 +343,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCourses(courses.filter(c => c.id !== id));
   };
 
-  const updateCourse = async (id: string, name: string, code: string) => {
+  const updateCourse = async (id: string, name: string, code: string, batchCodes: string[]) => {
     const res = await fetch(`/api/courses/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, code })
+      body: JSON.stringify({ name, code, batchCodes })
     });
     const updatedCourse = await res.json();
     setCourses(courses.map(c => c.id === id ? updatedCourse : c));
@@ -409,7 +434,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       mockDetails,
       addMockDetail,
       deleteMockDetail,
-      updateMockDetail
+      updateMockDetail,
+      fetchData
     }}>
       {children}
     </AppContext.Provider>

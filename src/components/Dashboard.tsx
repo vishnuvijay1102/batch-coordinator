@@ -141,7 +141,7 @@ export default function Dashboard() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
           <div className="absolute bottom-0 left-0 p-8">
-            <span className="px-2 py-1 bg-secondary text-white text-[8px] font-bold uppercase tracking-widest mb-2 inline-block">Update</span>
+            <span className="px-2 py-1 bg-secondary text-white text-[8px] font-bold uppercase tracking-widest mb-2 inline-block">Updates</span>
             <h4 className="text-white font-bold text-2xl leading-tight">North Campus Expansion<br/>Nearing Completion</h4>
           </div>
         </div>

@@ -211,8 +211,7 @@ export default function Batches() {
                       className="w-full px-4 py-3 bg-surface-container-high rounded-md border-none focus:ring-2 focus:ring-secondary text-primary-container font-medium"
                       value={formData.title}
                       onChange={(e) => {
-                        const course = courses.find(c => c.name === e.target.value);
-                        setFormData({ ...formData, title: e.target.value, code: course?.code || '' });
+                        setFormData({ ...formData, title: e.target.value });
                       }}
                       required
                     >
@@ -225,11 +224,18 @@ export default function Batches() {
                   <div className="space-y-2">
                     <label className="text-label text-outline block">Batch Code</label>
                     <input 
-                      disabled
-                      className="w-full px-4 py-3 bg-surface-container-high/50 rounded-md border-none text-primary-container font-black uppercase tracking-widest cursor-not-allowed"
+                      list="batch-code-suggestions"
+                      className="w-full px-4 py-3 bg-surface-container-high rounded-md border-none focus:ring-2 focus:ring-secondary text-primary-container font-black uppercase tracking-widest"
                       value={formData.code}
-                      placeholder="Auto-filled from course"
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                      placeholder="e.g. FSWD-2026-B1"
+                      required
                     />
+                    <datalist id="batch-code-suggestions">
+                      {courses.find(c => c.name === formData.title)?.batchCodes?.map(bc => (
+                        <option key={bc} value={bc} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="space-y-2">
                     <label className="text-label text-outline block">Trainer Name</label>

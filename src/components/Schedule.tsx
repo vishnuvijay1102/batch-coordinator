@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function Schedule() {
   const { classrooms, batches, mockDetails, updateBatch } = useApp();
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
+  const [scheduleType, setScheduleType] = useState<'Batches' | 'Mocks'>('Batches');
 
   const handleEditSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,16 +26,19 @@ export default function Schedule() {
   };
 
   const PX_PER_HOUR = 130;
-  const MIN_HOUR = 7;
-  const TOTAL_HOURS = 15;
+  const MIN_HOUR = 6;
+  const TOTAL_HOURS = 18;
 
   const SESSIONS = [
-    { start: '07:00', end: '09:00' },
-    { start: '09:00', end: '11:00' },
-    { start: '11:00', end: '13:00' },
+    { start: '06:00', end: '08:00' },
+    { start: '08:00', end: '10:00' },
+    { start: '10:00', end: '12:00' },
+    { start: '12:00', end: '14:00' },
     { start: '14:00', end: '16:00' },
     { start: '16:00', end: '18:00' },
-    { start: '19:00', end: '21:00' }
+    { start: '18:00', end: '20:00' },
+    { start: '20:00', end: '22:00' },
+    { start: '22:00', end: '24:00' }
   ];
 
   const getOffset = (timeStr: string) => {
@@ -43,26 +47,35 @@ export default function Schedule() {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       {/* Header Section */}
-      <section className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
-        <div className="max-w-2xl">
-          <h2 className="text-6xl font-black tracking-tighter text-black dark:text-white mb-4 uppercase">
-            Campus Orchestration
-          </h2>
-          <p className="text-on-surface-variant leading-relaxed max-w-md font-medium text-sm">
-            Visual allocation aligned by shift blocks. Accurate spatial mapping for educational modules.
-          </p>
+      <section className="flex flex-col md:flex-row justify-between items-center gap-6 mb-4">
+        <div className="flex bg-surface-container-high p-1 rounded-xl w-full md:w-auto self-start">
+          <button 
+            onClick={() => setScheduleType('Batches')}
+            className={cn(
+              "flex-1 md:w-48 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+              scheduleType === 'Batches' ? "bg-secondary text-white shadow-lg" : "text-outline hover:bg-surface-container-low"
+            )}
+          >
+            Batch Schedule
+          </button>
+          <button 
+            onClick={() => setScheduleType('Mocks')}
+            className={cn(
+              "flex-1 md:w-48 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+              scheduleType === 'Mocks' ? "bg-secondary text-white shadow-lg" : "text-outline hover:bg-surface-container-low"
+            )}
+          >
+            Mock Schedule
+          </button>
         </div>
-        <div className="flex gap-4">
-          <div className="bg-surface-container-lowest p-6 border-l-4 border-secondary ambient-shadow rounded-r-xl">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black dark:text-white/40 mb-1">Active Batches</p>
-            <p className="text-4xl font-black text-black dark:text-white">{batches.filter(b => b.status === 'Active').length}</p>
-          </div>
-          <div className="bg-surface-container-lowest p-6 border-l-4 border-primary-container ambient-shadow rounded-r-xl">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black dark:text-white/40 mb-1">Utilization</p>
-            <p className="text-4xl font-black text-black dark:text-white">
-              {classrooms.length > 0 ? Math.round((batches.filter(b => b.status === 'Active').length / (classrooms.length * 5)) * 100) : 0}%
+        
+        <div className="flex gap-4 w-full md:w-auto">
+          <div className="bg-surface-container-lowest py-3 px-6 border-l-4 border-secondary ambient-shadow rounded-r-xl hidden md:block">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-outline mb-0.5">Active Items</p>
+            <p className="text-2xl font-black text-primary-container">
+              {scheduleType === 'Batches' ? batches.filter(b => b.status === 'Active').length : mockDetails.length}
             </p>
           </div>
         </div>
@@ -109,8 +122,12 @@ export default function Schedule() {
           {/* Grid Body */}
           <div className="flex flex-col">
             {classrooms.map((room) => {
-              const roomBatches = batches.filter(b => String(b.classroomId) === String(room.id) && b.status !== 'Closed');
-              const roomMocks = mockDetails.filter(m => String(m.classroomId) === String(room.id));
+              const roomBatches = scheduleType === 'Batches' 
+                ? batches.filter(b => String(b.classroomId) === String(room.id) && b.status !== 'Closed')
+                : [];
+              const roomMocks = scheduleType === 'Mocks'
+                ? mockDetails.filter(m => String(m.classroomId) === String(room.id))
+                : [];
               
               return (
                 <div key={room.id} className="flex border-b border-outline-variant/40 group">
@@ -263,7 +280,7 @@ export default function Schedule() {
                     onChange={(e) => setEditingBatch({ ...editingBatch, classroomId: e.target.value })}
                   >
                     {classrooms.map(r => (
-                      <option key={r.id} value={r.id}>{r.name} ({r.level})</option>
+                      <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                   </select>
                 </div>

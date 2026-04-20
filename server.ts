@@ -50,6 +50,7 @@ const runMigrations = async () => {
     // 1. Courses Table
     await pool.query('ALTER TABLE courses ALTER COLUMN code TYPE TEXT');
     await pool.query('ALTER TABLE courses ALTER COLUMN name TYPE TEXT');
+    await pool.query('ALTER TABLE courses ADD COLUMN IF NOT EXISTS batch_codes JSONB DEFAULT \'[]\'');
     
     // 2. Batches Table
     await pool.query('ALTER TABLE batches ALTER COLUMN code TYPE TEXT');
@@ -150,6 +151,7 @@ async function startServer() {
       res.json(result.rows.map(row => ({
         ...row,
         classroomId: row.classroom_id,
+        trainer: row.trainer_name,
         startTime: row.start_time,
         endTime: row.end_time,
         startDate: row.start_date,
@@ -330,7 +332,10 @@ async function startServer() {
   app.get('/api/courses', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM courses ORDER BY created_at ASC');
-      res.json(result.rows);
+      res.json(result.rows.map(row => ({
+        ...row,
+        batchCodes: row.batch_codes || []
+      })));
     } catch (err) {
       console.error('❌ SQL Error (GET /api/courses):', err);
       res.status(500).json({ error: 'Database query failed', details: err instanceof Error ? err.message : String(err) });
@@ -339,9 +344,16 @@ async function startServer() {
 
   app.post('/api/courses', async (req, res) => {
     try {
-      const { name, code } = req.body;
-      const result = await pool.query('INSERT INTO courses (name, code) VALUES ($1, $2) RETURNING *', [name, code]);
-      res.json(result.rows[0]);
+      const { name, code, batchCodes } = req.body;
+      const result = await pool.query(
+        'INSERT INTO courses (name, code, batch_codes) VALUES ($1, $2, $3) RETURNING *', 
+        [name, code, JSON.stringify(batchCodes || [])]
+      );
+      const row = result.rows[0];
+      res.json({
+        ...row,
+        batchCodes: row.batch_codes || []
+      });
     } catch (err) {
       console.error('❌ SQL Error (POST /api/courses):', err);
       res.status(500).json({ error: 'Database query failed', details: err instanceof Error ? err.message : String(err) });
@@ -350,9 +362,16 @@ async function startServer() {
 
   app.put('/api/courses/:id', async (req, res) => {
     try {
-      const { name, code } = req.body;
-      const result = await pool.query('UPDATE courses SET name = $1, code = $2 WHERE id = $3 RETURNING *', [name, code, req.params.id]);
-      res.json(result.rows[0]);
+      const { name, code, batchCodes } = req.body;
+      const result = await pool.query(
+        'UPDATE courses SET name = COALESCE($1, name), code = COALESCE($2, code), batch_codes = COALESCE($3, batch_codes) WHERE id = $4 RETURNING *', 
+        [name, code, batchCodes ? JSON.stringify(batchCodes) : null, req.params.id]
+      );
+      const row = result.rows[0];
+      res.json({
+        ...row,
+        batchCodes: row.batch_codes || []
+      });
     } catch (err) {
       console.error('❌ SQL Error (PUT /api/courses):', err);
       res.status(500).json({ error: 'Database query failed', details: err instanceof Error ? err.message : String(err) });

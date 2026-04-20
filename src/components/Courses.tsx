@@ -14,15 +14,18 @@ export default function Courses() {
 
   const [formData, setFormData] = useState<Omit<Course, 'id'>>({
     name: '',
-    code: ''
+    code: '',
+    batchCodes: []
   });
+
+  const [newBatchCode, setNewBatchCode] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingCourse) {
-      updateCourse(editingCourse.id, formData.name, formData.code);
+      updateCourse(editingCourse.id, formData.name, formData.code, formData.batchCodes);
     } else {
-      addCourse(formData.name, formData.code);
+      addCourse(formData.name, formData.code, formData.batchCodes);
     }
     closeModal();
   };
@@ -30,11 +33,20 @@ export default function Courses() {
   const openModal = (course?: Course) => {
     if (course) {
       setEditingCourse(course);
-      setFormData({ name: course.name, code: course.code });
+      setFormData({ 
+        name: course.name, 
+        code: course.code, 
+        batchCodes: course.batchCodes || [] 
+      });
     } else {
       setEditingCourse(null);
-      setFormData({ name: '', code: '' });
+      setFormData({ 
+        name: '', 
+        code: '', 
+        batchCodes: [] 
+      });
     }
+    setNewBatchCode('');
     setIsModalOpen(true);
     setActiveMenu(null);
   };
@@ -104,8 +116,19 @@ export default function Courses() {
                   <Layers size={20} />
                 </div>
                 
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary mb-2 block">{course.code}</span>
                 <h3 className="text-xl font-bold text-primary-container leading-tight mb-4">{course.name}</h3>
+
+                <div className="flex flex-wrap gap-1.5 mb-6">
+                  {course.batchCodes && course.batchCodes.length > 0 ? (
+                    course.batchCodes.map((bc, idx) => (
+                      <span key={idx} className="bg-surface-container-low px-2 py-1 rounded text-[9px] font-black uppercase text-outline border border-outline-variant/10">
+                        {bc}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[9px] text-outline italic">No batch codes assigned</span>
+                  )}
+                </div>
                 
                 <div className="flex justify-between items-center pt-4 border-t border-outline-variant/10">
                    <div className="flex items-center gap-2 text-outline text-xs font-bold uppercase tracking-widest">
@@ -185,7 +208,7 @@ export default function Courses() {
               </h3>
               
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-label text-outline block">Course Name</label>
                     <input 
@@ -196,16 +219,71 @@ export default function Courses() {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-label text-outline block">Course Code</label>
-                    <input 
-                      className="w-full px-4 py-3 bg-surface-container-high rounded-md border-none focus:ring-2 focus:ring-secondary text-primary-container font-medium uppercase tracking-widest"
-                      placeholder="e.g. FSWD-2026"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                      required
-                    />
-                    <p className="text-[10px] text-outline italic">This code will be used as a prefix for batch identifiers.</p>
+
+                  {/* Multiple Batch Codes Management */}
+                  <div className="space-y-4 pt-4 border-t border-outline-variant/10">
+                    <div className="flex justify-between items-end">
+                      <label className="text-label text-outline block">Batch Codes Management</label>
+                      <span className="text-[9px] font-bold text-secondary uppercase tracking-widest">{formData.batchCodes.length} Codes Active</span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                       <input 
+                         className="flex-1 px-4 py-3 bg-surface-container-high rounded-md border-none focus:ring-2 focus:ring-secondary text-primary-container font-medium uppercase text-xs"
+                         placeholder="New Batch Code (e.g. FSWD-2026-B1)"
+                         value={newBatchCode}
+                         onChange={(e) => setNewBatchCode(e.target.value.toUpperCase())}
+                         onKeyPress={(e) => {
+                           if (e.key === 'Enter') {
+                             e.preventDefault();
+                             if (newBatchCode.trim() && !formData.batchCodes.includes(newBatchCode)) {
+                               setFormData({ ...formData, batchCodes: [...formData.batchCodes, newBatchCode.trim()] });
+                               setNewBatchCode('');
+                             }
+                           }
+                         }}
+                       />
+                       <button 
+                         type="button"
+                         onClick={() => {
+                           if (newBatchCode.trim() && !formData.batchCodes.includes(newBatchCode)) {
+                             setFormData({ ...formData, batchCodes: [...formData.batchCodes, newBatchCode.trim()] });
+                             setNewBatchCode('');
+                           }
+                         }}
+                         className="px-6 py-3 bg-secondary text-white rounded-md hover:opacity-90 font-bold text-xs uppercase"
+                       >
+                         Add
+                       </button>
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                      {formData.batchCodes.length > 0 ? (
+                        formData.batchCodes.map((bc, idx) => (
+                          <div key={idx} className="bg-surface-container-low px-4 py-3 rounded-lg flex items-center justify-between group border border-outline-variant/10 hover:border-secondary transition-all">
+                            <div className="flex items-center gap-3">
+                              <span className="w-5 h-5 rounded-full bg-secondary/10 flex items-center justify-center text-[8px] font-black text-secondary">
+                                {idx + 1}
+                              </span>
+                              <span className="text-xs font-black uppercase text-primary-container tracking-wider">{bc}</span>
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData({ ...formData, batchCodes: formData.batchCodes.filter((_, i) => i !== idx) })}
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-outline hover:bg-secondary/10 hover:text-secondary opacity-0 group-hover:opacity-100 transition-all"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-8 border-2 border-dashed border-outline-variant/20 rounded-xl flex flex-col items-center justify-center text-center px-4">
+                          <Layers size={24} className="text-outline/20 mb-2" />
+                          <p className="text-[10px] text-outline uppercase font-black">No batch codes added yet</p>
+                          <p className="text-[9px] text-outline/60 italic mt-1">Codes added here will be available in the Batch Registry suggestions.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
